@@ -4,48 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#6c5ce7">
-    <title>SubFix Pro</title>
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22SubFix%20Pro%22,%22short_name%22:%22SubFix%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%236c5ce7%22}">
-    
+    <title>SubFix Pro - Batch</title>
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22SubFix%20Pro%22,%22short_name%22:%22SubFix%22,%22start_url%22:%22index.html%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%236c5ce7%22}">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f8f9fa; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-top: 20px; text-align: center; }
-        h1 { font-size: 1.5rem; margin-bottom: 10px; color: #6c5ce7; }
-        #drop-area { border: 2px dashed #d1d1d1; border-radius: 12px; padding: 40px 20px; margin: 20px 0; background: #fafafa; transition: 0.2s; }
-        #drop-area.active { border-color: #6c5ce7; background: #f0eeff; }
-        .btn { background: #6c5ce7; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; width: 100%; font-size: 1rem; cursor: pointer; }
-        #status { margin-top: 15px; font-size: 0.9rem; color: #666; }
+        body { font-family: -apple-system, system-ui, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #6c5ce7; margin-bottom: 5px; }
+        p { color: #666; margin-bottom: 20px; }
+        #drop-area { border: 3px dashed #e0e0e0; border-radius: 15px; padding: 40px 10px; cursor: pointer; background: #fafafa; transition: 0.3s; }
+        #drop-area:active { background: #eeebff; border-color: #6c5ce7; }
+        .status-list { text-align: left; margin-top: 20px; max-height: 200px; overflow-y: auto; font-size: 0.85rem; }
+        .file-row { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .success { color: #27ae60; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h1>SubFix Pro</h1>
-    <p>Convert VTT to Clean SRT</p>
+    <p>Batch VTT to SRT Converter</p>
     
     <div id="drop-area" onclick="document.getElementById('fileElem').click()">
-        <p id="msg">Tap to select or drop VTT file</p>
-        <input type="file" id="fileElem" accept=".vtt" style="display:none" onchange="handleFiles(this.files)">
+        <b style="color:#6c5ce7">Tap to select files</b><br>
+        <span>Supports multiple files at once</span>
+        <input type="file" id="fileElem" accept=".vtt" multiple style="display:none" onchange="handleFiles(this.files)">
     </div>
 
-    <div id="status">Ready for upload</div>
+    <div id="status-list" class="status-list"></div>
 </div>
 
 <script>
     function handleFiles(files) {
-        const file = files[0];
-        if (!file) return;
+        const statusList = document.getElementById('status-list');
+        statusList.innerHTML = ""; // Clear list
 
-        document.getElementById('status').innerText = "Processing...";
-        const reader = new FileReader();
-
-        reader.onload = function(e) {
-            const content = e.target.result;
-            const srt = convertVTTtoSRT(content);
-            downloadFile(srt, file.name.replace('.vtt', '.srt'));
-            document.getElementById('status').innerText = "Saved: " + file.name.replace('.vtt', '.srt');
-        };
-        reader.readAsText(file);
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const srt = convertVTTtoSRT(e.target.result);
+                downloadFile(srt, file.name.replace('.vtt', '.srt'));
+                
+                const row = document.createElement('div');
+                row.className = 'file-row';
+                row.innerHTML = `<span>${file.name}</span> <span class="success">✓ Saved</span>`;
+                statusList.appendChild(row);
+            };
+            reader.readAsText(file);
+        });
     }
 
     function convertVTTtoSRT(vtt) {
@@ -54,7 +59,7 @@
             .replace(/NOTE .*\n/g, '')
             .replace(/(\d{2}:\d{2}:\d{2})\.(\d{3})/g, '$1,$2') 
             .replace(/(\d{2}:\d{2})\.(\d{3})/g, '00:$1,$2')
-            [span_0](start_span).replace(/\/g, '') // Removes the tags from your file[span_0](end_span)
+            [span_0](start_span).replace(/\/g, '') // Strips metadata from your specific files[span_0](end_span)
             .split(/\n\s*\n/)
             .filter(block => block.includes('-->'))
             .map((block, i) => `${i + 1}\n${block.trim()}\n`)
@@ -67,6 +72,7 @@
         link.href = URL.createObjectURL(blob);
         link.download = filename;
         link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 100);
     }
 </script>
 </body>
